@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sys
 import unittest
+from importlib.resources import files
 from types import ModuleType, SimpleNamespace
 from unittest.mock import Mock, patch
 
@@ -97,20 +98,27 @@ class AnnotationTest(unittest.TestCase):
         self.assertEqual(len(client.calls), 2)
         self.assertEqual(client.calls[0], client.calls[1])
 
-    def test_validation_retry_includes_the_error_detail(self) -> None:
+    def test_validation_retry_uses_packaged_prompt(self) -> None:
         client = FakeClient({"wrong": []}, {"entities": []})
 
         self.assertEqual(self.annotator(client).annotate("Texte"), [])
 
         messages = client.calls[1][0]
+        retry_template = (
+            files("pannot")
+            .joinpath("prompts", "validation_retry_fr.md")
+            .read_text(encoding="utf-8")
+            .strip()
+        )
+        expected = retry_template.replace(
+            "<<VALIDATION_ERROR>>",
+            "extraction must contain only entities",
+        )
         self.assertEqual(
             messages[-2],
             {"role": "assistant", "content": '{"wrong":[]}'},
         )
-        self.assertIn(
-            "extraction must contain only entities",
-            messages[-1]["content"],
-        )
+        self.assertEqual(messages[-1], {"role": "user", "content": expected})
 
     def test_absent_text_is_repaired_from_bounded_exact_candidates(self) -> None:
         client = FakeClient(
