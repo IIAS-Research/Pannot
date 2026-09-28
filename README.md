@@ -45,6 +45,10 @@ Create the client and annotator, then pass text directly to the annotator:
     for entity in entities:
         print(entity.label, entity.start, entity.end, text[entity.start:entity.end])
 
+`OpenAIChatClient` works with OpenAI-compatible endpoints, including local
+servers such as vLLM. It uses the `openai` Python package as an HTTP client, but
+it does not require an OpenAI-hosted service.
+
 `annotate()` returns a list of immutable `Entity` objects. Pannot does not create
 files or store the text or annotations.
 
@@ -59,6 +63,9 @@ The files `profiles/reims.md` and `profiles/parhaf.md` are examples of local
 conventions. Pannot never applies them automatically. Copy and adapt the one
 that best matches your context. These profiles are written in French because
 their content is sent to the model as instructions for French clinical text.
+
+If a service requires an API key, pass it explicitly with the `api_key`
+argument. Pannot does not read it from the environment automatically.
 
 ## Processing pipeline
 
@@ -90,3 +97,13 @@ To build the documentation locally:
 
     python -m pip install ".[docs]"
     python -m mkdocs serve
+
+## Medical data
+
+Pannot sends the document text, annotation instructions, and any retry context
+to the configured endpoint. The workflow can remain on local infrastructure
+when this endpoint runs the model locally and does not forward requests. Before
+processing clinical data, check that the service is authorized and that its
+hosting and security meet your requirements. Pannot does not write the document
+or returned annotations to disk. The calling application remains responsible
+for storing them, if needed.

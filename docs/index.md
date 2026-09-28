@@ -72,6 +72,18 @@ A simple document needs one model call. Repair, selection, and one retry per
 extraction or selection stage are used only when required. Read the
 [processing pipeline](pipeline.md) for the complete internal behavior.
 
+## Run locally or remotely
+
+The LLM can run inside the institution's infrastructure or through an approved
+remote service. `OpenAIChatClient` is named after the OpenAI-compatible Chat
+Completions API format that it supports. It uses the `openai` Python package as
+an HTTP client, but it does not require or automatically contact an
+OpenAI-hosted service.
+
+Pannot sends model requests to the configured endpoint. With a compatible local
+server such as vLLM that runs the model and does not forward requests, the
+annotation workflow can remain on local infrastructure.
+
 ## Scope
 
 Pannot:
@@ -91,3 +103,15 @@ Pannot does not:
 
 Start with the [usage guide](usage.md). If your institution has specific
 conventions, also read the [local adaptation guide](local-adaptation.md).
+
+## Privacy
+
+The document text, annotation instructions, and any retry context are sent to
+the configured endpoint. When this server runs the model locally and does not
+forward requests, this data can remain on local infrastructure. Local hosting
+does not replace the security, access, logging, and retention controls required
+for health data.
+
+Pannot does not store the text or annotations. The calling application remains
+responsible for their lifecycle. Never add real patient data to prompts,
+examples, tests, or version-controlled files.

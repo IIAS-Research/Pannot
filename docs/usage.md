@@ -30,7 +30,13 @@ The project is not published on PyPI.
 
 ## Create the annotator
 
-Create a chat client and pass it to the annotator:
+`OpenAIChatClient` uses the `openai` Python package as an HTTP client because
+many local model servers support the OpenAI-compatible Chat Completions API
+format. Its name describes this format, not the hosting provider. It does not
+require an OpenAI-hosted service. Pannot sends model requests to the configured
+endpoint.
+
+This example connects to Qwen served locally:
 
     from pannot import Annotator, OpenAIChatClient
 
@@ -40,6 +46,28 @@ Create a chat client and pass it to the annotator:
         qwen_non_thinking=True,
     )
     annotator = Annotator(client)
+
+This configuration sends model requests to `localhost`. When this server runs
+the model locally and does not forward requests, the workflow can remain on
+local infrastructure. It does not require an OpenAI API key.
+
+`qwen_non_thinking=True` sends
+`chat_template_kwargs.enable_thinking=false` to vLLM. Leave out this option if
+the server does not support that parameter.
+
+For any compatible service that requires an API key, provide it directly.
+Pannot does not read it from the environment automatically:
+
+    import os
+
+    client = OpenAIChatClient(
+        base_url="https://example.org/v1",
+        model="model-name",
+        api_key=os.environ["LLM_API_KEY"],
+    )
+
+The URL and API key are security-sensitive settings. Before you use a
+remote service, make sure it is authorized to receive the data you send.
 
 ## Annotate text
 
