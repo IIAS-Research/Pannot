@@ -20,9 +20,9 @@ docs = [
 ]
 
 [project.urls]
-Documentation = "https://iias-research.github.io/pannot/"
-Repository = "https://github.com/IIAS-Research/pannot"
-Issues = "https://github.com/IIAS-Research/pannot/issues"
+Documentation = "https://iias-research.github.io/Pannot/"
+Repository = "https://github.com/IIAS-Research/Pannot"
+Issues = "https://github.com/IIAS-Research/Pannot/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]

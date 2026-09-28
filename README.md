@@ -20,8 +20,8 @@ Python 3.11 or later is required.
 Pannot is not available on PyPI. Clone the repository and install it in a
 virtual environment:
 
-    git clone https://github.com/IIAS-Research/pannot.git
-    cd pannot
+    git clone https://github.com/IIAS-Research/Pannot.git
+    cd Pannot
     python3 -m venv .venv
     source .venv/bin/activate
     python -m pip install .
@@ -86,12 +86,12 @@ validation and retries.
 
 ## Documentation
 
-The [full documentation](https://iias-research.github.io/pannot/) covers:
+The [full documentation](https://iias-research.github.io/Pannot/) covers:
 
-- [the purpose and scope of Pannot](https://iias-research.github.io/pannot/);
-- [the internal processing pipeline](https://iias-research.github.io/pannot/pipeline/);
-- [the Python API and returned objects](https://iias-research.github.io/pannot/usage/);
-- [how to define local conventions](https://iias-research.github.io/pannot/local-adaptation/).
+- [the purpose and scope of Pannot](docs/index.md);
+- [the internal processing pipeline](docs/pipeline.md);
+- [the Python API and returned objects](docs/usage.md);
+- [how to define local conventions](docs/local-adaptation.md).
 
 To build the documentation locally:
 

@@ -20,8 +20,8 @@ match the schema.
 Clone the repository, create a virtual environment, and install Pannot from the
 repository root:
 
-    git clone https://github.com/IIAS-Research/pannot.git
-    cd pannot
+    git clone https://github.com/IIAS-Research/Pannot.git
+    cd Pannot
     python3 -m venv .venv
     source .venv/bin/activate
     python -m pip install .
