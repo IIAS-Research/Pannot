@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sys
 import unittest
 from types import ModuleType, SimpleNamespace
@@ -22,40 +23,153 @@ class FakeClient:
 
 
 class AnnotationTest(unittest.TestCase):
-    def test_unique_exact_mention_is_grounded_in_the_source(self) -> None:
+    def annotator(self, client: FakeClient) -> Annotator:
+        return Annotator(client)
+
+    def test_unique_exact_mention_is_localized_without_selection(self) -> None:
         client = FakeClient({"entities": [{"label": "NOM", "text": "Dupont"}]})
 
-        entities = Annotator(client).annotate("Dr Dupont.")
+        entities = self.annotator(client).annotate("Dr Dupont.")
 
         self.assertEqual(entities, [Entity(3, 9, "NOM")])
         self.assertEqual(len(client.calls), 1)
 
-    def test_invalid_client_response_is_retried_once(self) -> None:
+    def test_repeated_mention_is_selected_per_occurrence(self) -> None:
+        client = FakeClient(
+            {"entities": [{"label": "NOM", "text": "Dupont"}]},
+            {"o1": "o1c1", "o2": "o2c1"},
+        )
+
+        entities = self.annotator(client).annotate("Dupont puis Dupont")
+
+        self.assertEqual(
+            entities,
+            [Entity(0, 6, "NOM"), Entity(12, 18, "NOM")],
+        )
+        self.assertEqual(
+            [call[2] for call in client.calls],
+            ["entity_extraction", "entity_selection"],
+        )
+
+    def test_selection_resolves_competing_labels(self) -> None:
+        client = FakeClient(
+            {
+                "entities": [
+                    {"label": "NOM", "text": "Camille"},
+                    {"label": "PRENOM", "text": "Camille"},
+                ]
+            },
+            {"o1": "o1c2"},
+        )
+
+        entities = self.annotator(client).annotate("Camille arrive.")
+
+        self.assertEqual(entities, [Entity(0, 7, "PRENOM")])
+
+    def test_case_and_whitespace_variant_keeps_source_offsets(self) -> None:
+        client = FakeClient(
+            {"entities": [{"label": "NOM", "text": "DU PONT"}]},
+            {"o1": "o1c1"},
+        )
+
+        entities = self.annotator(client).annotate("Mme Du\tpont")
+
+        self.assertEqual(entities, [Entity(4, 11, "NOM")])
+
+    def test_casefold_does_not_match_part_of_an_expanded_character(self) -> None:
+        client = FakeClient(
+            {"entities": [{"label": "NOM", "text": "s"}]},
+            {"m1": None},
+        )
+
+        self.assertEqual(self.annotator(client).annotate("ß"), [])
+        self.assertEqual(len(client.calls), 2)
+
+    def test_invalid_client_response_is_retried_once_with_the_same_request(self) -> None:
         client = FakeClient(
             InvalidResponseError("invalid first response"),
             InvalidResponseError("invalid second response"),
         )
 
         with self.assertRaisesRegex(InvalidResponseError, "after one retry"):
-            Annotator(client).annotate("Dupont")
+            self.annotator(client).annotate("Dupont")
 
         self.assertEqual(len(client.calls), 2)
         self.assertEqual(client.calls[0], client.calls[1])
 
-    def test_invalid_payload_gets_one_corrective_retry(self) -> None:
+    def test_validation_retry_includes_the_error_detail(self) -> None:
         client = FakeClient({"wrong": []}, {"entities": []})
 
-        self.assertEqual(Annotator(client).annotate("Texte"), [])
+        self.assertEqual(self.annotator(client).annotate("Texte"), [])
 
-        retry_messages = client.calls[1][0]
-        self.assertEqual(retry_messages[-2]["role"], "assistant")
-        self.assertEqual(retry_messages[-1]["role"], "user")
+        messages = client.calls[1][0]
+        self.assertEqual(
+            messages[-2],
+            {"role": "assistant", "content": '{"wrong":[]}'},
+        )
+        self.assertIn(
+            "extraction must contain only entities",
+            messages[-1]["content"],
+        )
 
-    def test_transport_error_is_not_retried(self) -> None:
+    def test_absent_text_is_repaired_from_bounded_exact_candidates(self) -> None:
+        client = FakeClient(
+            {"entities": [{"label": "NOM", "text": "Rodiak"}]},
+            {"m1": "Rodiac"},
+        )
+
+        entities = self.annotator(client).annotate("Rodiac")
+
+        self.assertEqual(entities, [Entity(0, 6, "NOM")])
+        self.assertEqual(len(client.calls), 2)
+        _messages, schema, schema_name = client.calls[1]
+        self.assertEqual(schema_name, "entity_text_repair")
+        self.assertEqual(schema["properties"]["m1"]["enum"], ["Rodiac", None])
+        repair_input = json.loads(client.calls[1][0][-1]["content"])
+        self.assertEqual(
+            repair_input["first_extraction"],
+            {"entities": [{"label": "NOM", "text": "Rodiak"}]},
+        )
+
+    def test_absent_text_null_omits_only_that_mention(self) -> None:
+        client = FakeClient(
+            {
+                "entities": [
+                    {"label": "NOM", "text": "Dupont"},
+                    {"label": "NOM", "text": "Rodiak"},
+                ]
+            },
+            {"m1": None},
+        )
+
+        entities = self.annotator(client).annotate("Dupont et Rodiac")
+
+        self.assertEqual(entities, [Entity(0, 6, "NOM")])
+        self.assertEqual(len(client.calls), 2)
+
+    def test_absent_text_repair_can_be_followed_by_normal_selection(self) -> None:
+        client = FakeClient(
+            {"entities": [{"label": "NOM", "text": "Rodiak"}]},
+            {"m1": "Rodiac"},
+            {"o1": "o1c1", "o2": "o2c1"},
+        )
+
+        entities = self.annotator(client).annotate("Rodiac puis Rodiac")
+
+        self.assertEqual(
+            entities,
+            [Entity(0, 6, "NOM"), Entity(12, 18, "NOM")],
+        )
+        self.assertEqual(
+            [call[2] for call in client.calls],
+            ["entity_extraction", "entity_text_repair", "entity_selection"],
+        )
+
+    def test_non_response_error_is_not_retried(self) -> None:
         client = FakeClient(RuntimeError("transport failure"))
 
         with self.assertRaisesRegex(RuntimeError, "transport failure"):
-            Annotator(client).annotate("Dupont")
+            self.annotator(client).annotate("Dupont")
 
         self.assertEqual(len(client.calls), 1)
 
