@@ -1,0 +1,18 @@
+site_name: Pannot
+site_description: Pseudo-annotations for training smaller clinical NER models
+site_url: https://iias-research.github.io/pannot/
+repo_url: https://github.com/IIAS-Research/pannot
+edit_uri: edit/main/docs/
+
+theme:
+  name: readthedocs
+
+nav:
+  - Home: index.md
+  - Processing pipeline: pipeline.md
+  - Usage: usage.md
+  - Local adaptation: local-adaptation.md
+
+markdown_extensions:
+  - toc:
+      permalink: true
