@@ -126,8 +126,15 @@ def _prompt(name: str) -> str:
     return prompt_path.read_text(encoding="utf-8").strip()
 
 
-def _compose_prompt(instruction: str, generic_prompt: str) -> str:
-    return "\n\n".join((instruction.strip(), generic_prompt.strip()))
+def _compose_prompt(instruction: str, generic_prompt: str, local_instructions: str) -> str:
+    parts = [instruction.strip(), generic_prompt.strip()]
+    if local_instructions.strip():
+        local_prompt = (
+            _prompt("local_priority_fr.md") + "\n" + local_instructions.strip()
+        )
+        parts.append(local_prompt)
+    return "\n\n".join(parts)
+
 
 def _validation_retry_prompt(detail: str) -> str:
     template = _prompt("validation_retry_fr.md")
@@ -474,18 +481,26 @@ def _validation_retry_messages(
 class Annotator:
     """Extract and ground clinical entities with an injectable chat client."""
 
-    def __init__(self, client: ChatClient) -> None:
+    def __init__(
+        self,
+        client: ChatClient,
+        *,
+        local_instructions: str = "",
+    ) -> None:
+        if not isinstance(local_instructions, str):
+            raise TypeError("local_instructions must be text")
         generic_prompt = _prompt("generic_fr.md")
         self.client = client
         self._extraction_prompt = _compose_prompt(
-            _prompt("extraction_fr.md"), generic_prompt
+            _prompt("extraction_fr.md"), generic_prompt, local_instructions
         )
         self._selection_prompt = _compose_prompt(
-            _prompt("selection_fr.md"), generic_prompt
+            _prompt("selection_fr.md"), generic_prompt, local_instructions
         )
         self._text_repair_prompt = _compose_prompt(
-            _prompt("text_repair_fr.md"), generic_prompt
+            _prompt("text_repair_fr.md"), generic_prompt, local_instructions
         )
+
     def _request(
         self,
         messages: Sequence[Message],

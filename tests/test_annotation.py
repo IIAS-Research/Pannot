@@ -35,6 +35,32 @@ class AnnotationTest(unittest.TestCase):
         self.assertEqual(entities, [Entity(3, 9, "NOM")])
         self.assertEqual(len(client.calls), 1)
 
+    def test_system_prompt_is_composed_from_packaged_resources(self) -> None:
+        local_instructions = 'Règle locale avec {"format":"{exact}"}.'
+        client = FakeClient({"entities": []})
+
+        Annotator(
+            client,
+            local_instructions=f"  {local_instructions}  ",
+        ).annotate("Texte")
+
+        prompt_directory = files("pannot").joinpath("prompts")
+
+        def read_prompt(name: str) -> str:
+            prompt_path = prompt_directory.joinpath(name)
+            return prompt_path.read_text(encoding="utf-8").strip()
+
+        expected = "\n\n".join(
+            (
+                read_prompt("extraction_fr.md"),
+                read_prompt("generic_fr.md"),
+                read_prompt("local_priority_fr.md") + "\n" + local_instructions,
+            )
+        )
+        messages = client.calls[0][0]
+        self.assertEqual(messages[0], {"role": "system", "content": expected})
+        self.assertEqual(messages[1], {"role": "user", "content": "Texte"})
+
     def test_repeated_mention_is_selected_per_occurrence(self) -> None:
         client = FakeClient(
             {"entities": [{"label": "NOM", "text": "Dupont"}]},
