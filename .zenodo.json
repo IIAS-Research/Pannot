@@ -1,0 +1,22 @@
+{
+  "title": "Pannot",
+  "description": "Pannot creates draft named entity recognition (NER) annotations from French clinical documents using a large language model exposed through an OpenAI-compatible API. It maps each extracted mention back to deterministic character offsets and supports institution-specific annotation conventions.",
+  "creators": [
+    {
+      "name": "Merieux, Rudy",
+      "orcid": "0009-0004-6643-8555",
+      "affiliation": "IIAS - Institute of Artificial Intelligence in Health, CHU de Reims, Université de Reims Champagne-Ardenne, Reims, France"
+    }
+  ],
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "gpl-3.0-only",
+  "keywords": [
+    "named entity recognition",
+    "clinical natural language processing",
+    "French clinical text",
+    "large language models",
+    "pseudo-annotation",
+    "training data annotation"
+  ]
+}

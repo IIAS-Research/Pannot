@@ -107,3 +107,10 @@ processing clinical data, check that the service is authorized and that its
 hosting and security meet your requirements. Pannot does not write the document
 or returned annotations to disk. The calling application remains responsible
 for storing them, if needed.
+
+## License
+
+Pannot is licensed under the GNU General Public License version 3 only
+(`GPL-3.0-only`). See [LICENSE](LICENSE).
+
+Datasets, models, and other third-party resources keep their own licenses.
