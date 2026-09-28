@@ -1,4 +1,4 @@
-name: CI
+name: CI and release
 
 on:
   pull_request:
@@ -117,3 +117,20 @@ jobs:
           if missing:
               raise SystemExit(f"Missing packaged prompts: {missing}")
           PY
+
+  release:
+    name: Version
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test, package]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Prepare or create the release
+        uses: googleapis/release-please-action@v5
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

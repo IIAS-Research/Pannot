@@ -98,6 +98,29 @@ To build the documentation locally:
     python -m pip install ".[docs]"
     python -m mkdocs serve
 
+## Releases
+
+The package version is defined in `pyproject.toml`. The CI checks every pull
+request and push to `main` on Python 3.11 through 3.14. It also validates the
+lock file and built distributions, then tests an isolated wheel installation.
+
+After these checks pass on `main`, Release Please keeps its manifest and
+`uv.lock` in sync and automatically prepares a pull request from conventional
+commits:
+
+- `feat:` for a new feature;
+- `fix:` for a bug fix;
+- `feat!:` or `BREAKING CHANGE` for a breaking change.
+
+Merging this pull request updates the changelog and creates the tag and GitHub
+Release. Pannot is not published to PyPI automatically. GitHub Pages publishes
+the current documentation, while Git tags preserve the state of each version.
+
+Before the first deployment, select GitHub Actions under
+Settings > Pages > Build and deployment > Source. To allow the release pull
+request to be created, also enable Allow GitHub Actions to create and approve
+pull requests under Settings > Actions > General.
+
 ## Medical data
 
 Pannot sends the document text, annotation instructions, and any retry context
